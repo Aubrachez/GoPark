@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkVision - Temps Réel</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Mode navigation - masquer tous les éléments sauf la carte et le bouton d'arrêt */
+        .navigation-mode header,
+        .navigation-mode .controls,
+        .navigation-mode .loading,
+        .navigation-mode .leaflet-control-locate,
+        .navigation-mode .leaflet-control-zoom {
+            display: none !important;
+        }
+
+        .navigation-mode .map-container {
+            margin: 0;
+            border-radius: 0;
+        }
+
+        .navigation-mode .navigation-panel {
+            display: block !important;
+            top: 10px;
+            right: 10px;
+            left: 10px;
+            max-width: none;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            border: 2px solid #10b981;
+        }
+
+        .navigation-mode .navigation-header h3 {
+            color: #10b981;
+        }
+
+        .navigation-mode .close-btn {
+            color: white;
+        }
+
+        .navigation-mode .stat-value {
+            color: #10b981;
+        }
+
+        .navigation-mode .stat-label {
+            color: #ccc;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo h1 {
+            color: #667eea;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo-icon {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 20px;
+        }
+
+        .stat-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .stat-dot.available {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .stat-dot.my-position {
+            background: #3b82f6;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .stat-text {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+            margin: 15px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 25px;
+            border-radius: 30px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+            flex-wrap: wrap;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            min-width: 120px;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .control-btn:active {
+            transform: translateY(0);
+        }
+
+        .control-btn.my-location {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            min-width: 250px;
+        }
+
+        .popup-content h3 {
+            color: #667eea;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .popup-content p {
+            color: #666;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+
+        .popup-content .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .popup-content .status.available {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .navigation-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .navigation-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .position-pulse {
+            animation: positionPulse 2s infinite;
+        }
+
+        @keyframes positionPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(59, 130, 246, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+
+        .navigation-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+        }
+
+        .navigation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .navigation-header h3 {
+            color: #667eea;
+            font-size: 16px;
+        }
+
+        .navigation-info {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .navigation-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .stop-navigation {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        .stop-navigation:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Style pour mobile */
+        @media (max-width: 768px) {
+            header {
+                padding: 10px 15px;
+            }
+            .logo h1 {
+                font-size: 20px;
+            }
+            .stats {
+                gap: 8px;
+            }
+            .stat-item {
+                padding: 6px 12px;
+            }
+            .stat-text {
+                font-size: 12px;
+            }
+            .controls {
+                padding: 12px 20px;
+                gap: 10px;
+                bottom: 15px;
+            }
+            .control-btn {
+                padding: 8px 15px;
+                font-size: 12px;
+                min-width: 100px;
+            }
+            .map-container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            .navigation-panel {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo h1 {
+                font-size: 18px;
+            }
+            .stat-item {
+                padding: 4px 10px;
+            }
+            .controls {
+                flex-direction: column;
+                width: 90%;
+                padding: 10px;
+            }
+            .control-btn {
+                width: 100%;
+                min-width: auto;
+            }
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 1001;
+            text-align: center;
+        }
+
+        .leaflet-control-locate {
+            background: white;
+            border-radius: 4px;
+            padding: 5px;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+        }
+
+        .leaflet-control-locate a {
+            background-color: #fff;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333'%3E%3Cpath d='M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'/%3E%3C/svg%3E");
+            background-size: 16px 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+            width: 30px;
+            height: 30px;
+            display: block;
+            border-radius: 4px;
+        }
+
+        .leaflet-control-locate a:hover {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🅿️</div>
+            <h1>ParkVision</h1>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-dot available"></div>
+                <span class="stat-text"><span id="available-count">0</span> Disponibles</span>
+            </div>
+            <div class="stat-item">
+                <div class="stat-dot my-position"></div>
+                <span class="stat-text">Ma position</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="map-container">
+        <div id="map"></div>
+        <div class="controls">
+            <button class="control-btn" onclick="fullRefresh()">🔄 Actualiser</button>
+            <button class="control-btn" onclick="findNearestParking()">📍 Plus proche</button>
+            <button class="control-btn my-location" onclick="locateMe()">🎯 Ma position</button>
+            </div>
+    </div>
+
+    <div class="navigation-panel" id="navigationPanel">
+        <div class="navigation-header">
+            <h3>🎯 Navigation en cours</h3>
+        </div>
+        <div class="navigation-info">
+            <p>Destination: <strong id="destinationName">-</strong></p>
+        </div>
+        <div class="navigation-stats">
+            <div class="stat">
+                <div class="stat-value" id="distance">-</div>
+                <div class="stat-label">Distance</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="duration">-</div>
+                <div class="stat-label">Durée</div>
+            </div>
+        </div>
+        <button class="stop-navigation" onclick="stopNavigation()">🛑 Arrêter la navigation</button>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <p>📍 Localisation en cours...</p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script>
+        let map;
+        let parkingSpots = [];
+        let markers = [];
+        let userMarker = null;
+        let userCircle = null;
+        let watchId = null;
+        let routingControl = null;
+        let currentNavigationSpot = null;
+
+        // Coordonnées de Liège, Belgique
+        const cityCenter = [50.6292, 5.5797];
+
+        // Attendre que Leaflet soit chargé
+        function initMap() {
+            if (typeof L === 'undefined') {
+                setTimeout(initMap, 100);
+                return;
+            }
+            
+            map = L.map('map').setView(cityCenter, 14);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Ajouter un contrôle de localisation personnalisé
+            const locateControl = L.Control.extend({
+                options: {
+                    position: 'topleft'
+                },
+                onAdd: function(map) {
+                    const container = L.DomUtil.create('div', 'leaflet-control-locate');
+                    const link = L.DomUtil.create('a', '', container);
+                    link.href = '#';
+                    link.title = 'Localiser ma position';
+                    link.innerHTML = '📍';
+                    
+                    L.DomEvent.on(link, 'click', function(e) {
+                        L.DomEvent.stopPropagation(e);
+                        L.DomEvent.preventDefault(e);
+                        locateMe();
+                    });
+                    
+                    return container;
+                }
+            });
+            
+            map.addControl(new locateControl());
+
+            generateParkingSpots();
+            displayParkingSpots();
+            
+            // Démarrer la mise à jour aléatoire automatique
+            scheduleNextUpdate();
+        }
+
+        // --- NOUVELLE LOGIQUE DE MISE A JOUR AUTOMATIQUE ---
+
+        function scheduleNextUpdate() {
+            // Calculer un temps aléatoire entre 30 secondes (30000ms) et 1 minute (60000ms)
+            const delay = Math.floor(Math.random() * (60000 - 30000 + 1) + 30000);
+            
+            setTimeout(() => {
+                updateRandomSpot();
+                scheduleNextUpdate(); // Relancer le cycle
+            }, delay);
+        }
+
+        function updateRandomSpot() {
+            // 1. Faire disparaître une place (Devient occupée)
+            const availableSpots = parkingSpots.filter(s => s.available);
+            if (availableSpots.length > 0) {
+                const randomFreeIndex = Math.floor(Math.random() * availableSpots.length);
+                availableSpots[randomFreeIndex].available = false;
+                availableSpots[randomFreeIndex].lastUpdate = new Date();
+            }
+
+            // 2. Faire apparaître une place (Devient libre)
+            const occupiedSpots = parkingSpots.filter(s => !s.available);
+            if (occupiedSpots.length > 0) {
+                const randomOccupiedIndex = Math.floor(Math.random() * occupiedSpots.length);
+                occupiedSpots[randomOccupiedIndex].available = true;
+                occupiedSpots[randomOccupiedIndex].lastUpdate = new Date();
+            }
+
+            // Mettre à jour l'affichage
+            displayParkingSpots();
+        }
+
+        // --- FIN NOUVELLE LOGIQUE ---
+
+        function generateParkingSpots() {
+            const spots = [
+                { id: 1, name: "Place Saint-Lambert", lat: 50.6412, lng: 5.5735 },
+                { id: 2, name: "Rue de la Cathédrale", lat: 50.6425, lng: 5.5745 },
+                { id: 3, name: "Boulevard de la Sauvenière", lat: 50.6398, lng: 5.5712 },
+                { id: 4, name: "Rue Pont d'Avroy", lat: 50.6385, lng: 5.5765 },
+                { id: 5, name: "Place de la République", lat: 50.6442, lng: 5.5698 },
+                { id: 6, name: "Rue Féronstrée", lat: 50.6455, lng: 5.5788 },
+                { id: 7, name: "Quai de la Goffe", lat: 50.6472, lng: 5.5825 },
+                { id: 8, name: "Rue Hors-Château", lat: 50.6468, lng: 5.5802 },
+                { id: 9, name: "Place du Marché", lat: 50.6435, lng: 5.5722 },
+                { id: 10, name: "Boulevard d'Avroy", lat: 50.6372, lng: 5.5735 },
+                { id: 11, name: "Rue Léopold", lat: 50.6392, lng: 5.5688 },
+                { id: 12, name: "Place Xavier Neujean", lat: 50.6405, lng: 5.5825 },
+                { id: 13, name: "Rue de la Régence", lat: 50.6418, lng: 5.5668 },
+                { id: 14, name: "Boulevard Piercot", lat: 50.6355, lng: 5.5792 },
+                { id: 15, name: "Rue Saint-Gilles", lat: 50.6448, lng: 5.5742 },
+                { id: 16, name: "Place Cockerill", lat: 50.6475, lng: 5.5725 },
+                { id: 17, name: "Rue de l'Université", lat: 50.6420, lng: 5.5675 },
+                { id: 18, name: "Quai Mativa", lat: 50.6360, lng: 5.5820 },
+                { id: 19, name: "Rue de Serbie", lat: 50.6330, lng: 5.5750 },
+                { id: 20, name: "Place des Déportés", lat: 50.6480, lng: 5.5780 },
+                { id: 21, name: "Rue de Campine", lat: 50.6500, lng: 5.5830 },
+                { id: 22, name: "Boulevard Frère-Orban", lat: 50.6340, lng: 5.5700 },
+                { id: 23, name: "Rue de la Loi", lat: 50.6390, lng: 5.5650 },
+                { id: 24, name: "Place du 20-Août", lat: 50.6410, lng: 5.5800 },
+                { id: 25, name: "Rue de la Cathédrale Sud", lat: 50.6430, lng: 5.5750 },
+                { id: 26, name: "Quai de Rome", lat: 50.6320, lng: 5.5800 },
+                { id: 27, name: "Rue de la Madeleine", lat: 50.6490, lng: 5.5750 },
+                { id: 28, name: "Place Saint-Jacques", lat: 50.6450, lng: 5.5700 },
+                { id: 29, name: "Rue de la Wache", lat: 50.6400, lng: 5.5850 },
+                { id: 30, name: "Boulevard de la Constitution", lat: 50.6310, lng: 5.5850 },
+                { id: 31, name: "Rue de la Montagne", lat: 50.6460, lng: 5.5650 },
+                { id: 32, name: "Place de la Cathédrale", lat: 50.6440, lng: 5.5770 },
+                { id: 33, name: "Rue de la Casquette", lat: 50.6380, lng: 5.5790 },
+                { id: 34, name: "Quai de la Dérivation", lat: 50.6350, lng: 5.5840 },
+                { id: 35, name: "Rue du Palais", lat: 50.6470, lng: 5.5790 },
+                { id: 36, name: "Place de la République Française", lat: 50.6430, lng: 5.5680 },
+                { id: 37, name: "Rue des Clarisses", lat: 50.6480, lng: 5.5810 },
+                { id: 38, name: "Boulevard Raymond Poincaré", lat: 50.6320, lng: 5.5900 },
+                { id: 39, name: "Rue de la Régence Sud", lat: 50.6400, lng: 5.5670 },
+                { id: 40, name: "Place du Théâtre", lat: 50.6450, lng: 5.5720 }
+            ];
+
+            parkingSpots = spots.map(spot => ({
+                ...spot,
+                available: Math.random() > 0.5,
+                capacity: Math.floor(Math.random() * 10) + 5,
+                lastUpdate: new Date()
+            }));
+        }
+
+        // Icône pour les places disponibles
+        const greenIcon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="
+                width: 20px;
+                height: 20px;
+                background: #10b981;
+                border: 3px solid white;
+                border-radius: 50%;
+                box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+                cursor: pointer;
+            "></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
+
+        // Icône utilisateur
+        const userIcon = L.divIcon({
+            className: 'position-pulse',
+            html: `<div style="
+                width: 25px;
+                height: 25px;
+                background: #3b82f6;
+                border: 3px solid white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 12px;
+                font-weight: bold;
+            ">📍</div>`,
+            iconSize: [25, 25],
+            iconAnchor: [12, 12]
+        });
+
+        function displayParkingSpots() {
+            // Supprimer les anciens marqueurs
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            let availableCount = 0;
+
+            parkingSpots.forEach(spot => {
+                // Si la place n'est pas disponible, on ne l'affiche pas
+                if (!spot.available) {
+                    return;
+                }
+                
+                const marker = L.marker([spot.lat, spot.lng], { 
+                    icon: greenIcon 
+                }).addTo(map);
+
+                const popupContent = `
+                    <div class="popup-content">
+                        <h3>${spot.name}</h3>
+                        <p>📊 Capacité: ${spot.capacity} places</p>
+                        <p>🕐 Mis à jour: ${spot.lastUpdate.toLocaleTimeString('fr-FR')}</p>
+                        <span class="status available">Disponible</span>
+                        <button class="navigation-btn" onclick="startNavigation(${spot.id})">
+                            🚗 Naviguer jusqu'ici
+                        </button>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+                
+                marker.on('click', function() {
+                    marker.openPopup();
+                });
+
+                markers.push(marker);
+                
+                // On compte uniquement les disponibles
+                availableCount++;
+            });
+
+            document.getElementById('available-count').textContent = availableCount;
+        }
+
+        function startNavigation(spotId) {
+            const spot = parkingSpots.find(s => s.id === spotId);
+            if (!spot) return;
+
+            // Arrêter toute navigation en cours
+            stopNavigation();
+
+            currentNavigationSpot = spot;
+
+            if (!userMarker) {
+                alert("Veuillez d'abord activer votre localisation");
+                return;
+            }
+
+            const userPos = userMarker.getLatLng();
+
+            // Activer le mode navigation
+            document.body.classList.add('navigation-mode');
+
+            // Créer le contrôle de routage
+            routingControl = L.Routing.control({
+                waypoints: [
+                    L.latLng(userPos.lat, userPos.lng),
+                    L.latLng(spot.lat, spot.lng)
+                ],
+                routeWhileDragging: false,
+                showAlternatives: false,
+                lineOptions: {
+                    styles: [{ color: '#10b981', weight: 8, opacity: 0.9 }]
+                },
+                createMarker: function() { return null; },
+                collapsible: false,
+                show: false
+            }).addTo(map);
+
+            // Masquer les autres marqueurs pendant la navigation
+            markers.forEach(marker => {
+                if (marker.getLatLng().lat !== spot.lat || marker.getLatLng().lng !== spot.lng) {
+                    map.removeLayer(marker);
+                }
+            });
+
+            // Mettre à jour le panneau de navigation
+            document.getElementById('destinationName').textContent = spot.name;
+            document.getElementById('navigationPanel').style.display = 'block';
+
+            // Écouter les événements de routage
+            routingControl.on('routesfound', function(e) {
+                const routes = e.routes;
+                if (routes && routes.length > 0) {
+                    const route = routes[0];
+                    document.getElementById('distance').textContent = 
+                        (route.summary.totalDistance / 1000).toFixed(1) + ' km';
+                    
+                    const durationMinutes = Math.round(route.summary.totalTime / 60);
+                    document.getElementById('duration').textContent = 
+                        durationMinutes + ' min';
+                }
+            });
+
+            // Recentrer la carte
+            const bounds = L.latLngBounds([
+                [userPos.lat, userPos.lng],
+                [spot.lat, spot.lng]
+            ]);
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+
+        function stopNavigation() {
+            // Désactiver le mode navigation
+            document.body.classList.remove('navigation-mode');
+
+            if (routingControl) {
+                map.removeControl(routingControl);
+                routingControl = null;
+            }
+            
+            currentNavigationSpot = null;
+            document.getElementById('navigationPanel').style.display = 'none';
+
+            // Réafficher tous les marqueurs
+            displayParkingSpots();
+
+            // Recentrer sur la position de l'utilisateur
+            if (userMarker) {
+                const userPos = userMarker.getLatLng();
+                map.setView([userPos.lat, userPos.lng], 15);
+            } else {
+                map.setView(cityCenter, 14);
+            }
+        }
+
+        // Fonction manuelle pour le bouton Actualiser (met tout à jour aléatoirement)
+        function fullRefresh() {
+            parkingSpots.forEach(spot => {
+                spot.available = Math.random() > 0.4;
+                spot.lastUpdate = new Date();
+            });
+            displayParkingSpots();
+        }
+
+        function findNearestParking() {
+            const availableSpots = parkingSpots.filter(spot => spot.available);
+            if (availableSpots.length === 0) {
+                alert('Aucune place disponible pour le moment');
+                return;
+            }
+
+            // Si l'utilisateur a partagé sa position
+            if (userMarker) {
+                const userPos = userMarker.getLatLng();
+                let nearestSpot = availableSpots[0];
+                let minDistance = getDistance(userPos.lat, userPos.lng, nearestSpot.lat, nearestSpot.lng);
+
+                availableSpots.forEach(spot => {
+                    const distance = getDistance(userPos.lat, userPos.lng, spot.lat, spot.lng);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        nearestSpot = spot;
+                    }
+                });
+
+                map.setView([nearestSpot.lat, nearestSpot.lng], 17, {
+                    animate: true,
+                    duration: 1
+                });
+
+                setTimeout(() => {
+                    const marker = markers.find(m => {
+                        const pos = m.getLatLng();
+                        return pos.lat === nearestSpot.lat && pos.lng === nearestSpot.lng;
+                    });
+                    if (marker) {
+                        marker.openPopup();
+                    }
+                }, 1000);
+            } else {
+                // Sinon, choisir une place aléatoire
+                const nearest = availableSpots[Math.floor(Math.random() * availableSpots.length)];
+                map.setView([nearest.lat, nearest.lng], 17, {
+                    animate: true,
+                    duration: 1
+                });
+
+                setTimeout(() => {
+                    const marker = markers.find(m => {
+                        const pos = m.getLatLng();
+                        return pos.lat === nearest.lat && pos.lng === nearest.lng;
+                    });
+                    if (marker) {
+                        marker.openPopup();
+                    }
+                }, 1000);
+            }
+        }
+
+        function getDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function locateMe() {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            if (!navigator.geolocation) {
+                alert("La géolocalisation n'est pas supportée par votre navigateur");
+                loading.style.display = 'none';
+                return;
+            }
+
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+
+            watchId = navigator.geolocation.watchPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    if (userMarker) {
+                        map.removeLayer(userMarker);
+                    }
+                    if (userCircle) {
+                        map.removeLayer(userCircle);
+                    }
+
+                    userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(map);
+                    
+                    userCircle = L.circle([lat, lng], {
+                        color: '#3b82f6',
+                        fillColor: '#3b82f6',
+                        fillOpacity: 0.1,
+                        radius: position.coords.accuracy
+                    }).addTo(map);
+
+                    if (routingControl && currentNavigationSpot) {
+                        routingControl.setWaypoints([
+                            L.latLng(lat, lng),
+                            L.latLng(currentNavigationSpot.lat, currentNavigationSpot.lng)
+                        ]);
+                    } else if (!document.body.classList.contains('navigation-mode')) {
+                        map.setView([lat, lng], 16);
+                    }
+                    
+                    loading.style.display = 'none';
+                },
+                function(error) {
+                    loading.style.display = 'none';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            alert("Vous avez refusé l'accès à votre position");
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            alert("Information de localisation indisponible");
+                            break;
+                        case error.TIMEOUT:
+                            alert("La demande de localisation a expiré");
+                            break;
+                        default:
+                            alert("Une erreur inconnue s'est produite");
+                            break;
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 100000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        window.addEventListener('load', initMap);
+
+        window.addEventListener('resize', function() {
+            setTimeout(() => {
+                map.invalidateSize();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
