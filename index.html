@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoPark - Temps Réel</title>
+    <title>ParkVision - Temps Réel</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <style>
@@ -153,7 +153,8 @@
 
         .controls {
             position: absolute;
-            bottom: 20px;
+            /* MODIFICATION ICI : Remonté à 25% */
+            bottom: 25%;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255, 255, 255, 0.95);
@@ -349,7 +350,8 @@
             .controls {
                 padding: 12px 20px;
                 gap: 10px;
-                bottom: 15px;
+                /* MODIFICATION MOBILE AUSSI : 25% */
+                bottom: 25%;
             }
             .control-btn {
                 padding: 8px 15px;
@@ -427,7 +429,7 @@
     <header>
         <div class="logo">
             <div class="logo-icon">🅿️</div>
-            <h1>GoPark</h1>
+            <h1>ParkVision</h1>
         </div>
         <div class="stats">
             <div class="stat-item">
@@ -447,7 +449,7 @@
             <button class="control-btn" onclick="fullRefresh()">🔄 Actualiser</button>
             <button class="control-btn" onclick="findNearestParking()">📍 Plus proche</button>
             <button class="control-btn my-location" onclick="locateMe()">🎯 Ma position</button>
-            </div>
+        </div>
     </div>
 
     <div class="navigation-panel" id="navigationPanel">
