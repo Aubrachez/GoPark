@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ParkVision - Temps Réel</title>
+    <title>ParkVision - Menu Burger</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
     <style>
@@ -22,9 +22,10 @@
             overflow: hidden;
         }
 
-        /* Mode navigation - masquer tous les éléments sauf la carte et le bouton d'arrêt */
+        /* --- Mode Navigation --- */
+        /* Masquer l'en-tête, le menu burger et le menu déroulant en mode navigation */
         .navigation-mode header,
-        .navigation-mode .controls,
+        .navigation-mode .menu-dropdown,
         .navigation-mode .loading,
         .navigation-mode .leaflet-control-locate,
         .navigation-mode .leaflet-control-zoom {
@@ -47,31 +48,26 @@
             border: 2px solid #10b981;
         }
 
-        .navigation-mode .navigation-header h3 {
-            color: #10b981;
-        }
+        .navigation-mode .navigation-header h3 { color: #10b981; }
+        .navigation-mode .stat-value { color: #10b981; }
+        .navigation-mode .stat-label { color: #ccc; }
 
-        .navigation-mode .close-btn {
-            color: white;
-        }
-
-        .navigation-mode .stat-value {
-            color: #10b981;
-        }
-
-        .navigation-mode .stat-label {
-            color: #ccc;
-        }
-
+        /* --- En-tête --- */
         header {
             background: rgba(255, 255, 255, 0.95);
-            padding: 15px 20px;
+            padding: 10px 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
+            z-index: 2000;
+            position: relative;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
         .logo {
@@ -82,64 +78,152 @@
 
         .logo h1 {
             color: #667eea;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
         }
 
         .logo-icon {
-            width: 35px;
-            height: 35px;
+            width: 32px;
+            height: 32px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 20px;
+            font-size: 18px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
 
         .stats {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .stat-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 8px 15px;
+            gap: 6px;
+            padding: 6px 12px;
             background: #f0f0f0;
             border-radius: 20px;
         }
 
         .stat-dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
         }
 
         .stat-dot.available {
             background: #10b981;
-            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
         }
 
         .stat-dot.my-position {
             background: #3b82f6;
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
         }
 
         .stat-text {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: #333;
         }
 
+        /* --- Menu Burger --- */
+        .burger-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .burger-btn:hover {
+            background: #f0f0f0;
+        }
+
+        /* --- Menu Déroulant --- */
+        .menu-dropdown {
+            position: absolute;
+            top: 70px; /* Juste en dessous du header */
+            right: 20px;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 2001;
+            display: none; /* Masqué par défaut */
+            flex-direction: column;
+            gap: 10px;
+            width: 200px;
+            transform-origin: top right;
+            animation: slideIn 0.2s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .menu-dropdown.show {
+            display: flex;
+        }
+
+        .menu-btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            background: white;
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+        }
+
+        .menu-btn:hover {
+            background: #f8f9fa;
+            transform: translateX(2px);
+            border-color: #ddd;
+        }
+
+        .menu-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        
+        .menu-btn.location {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+        }
+
+        /* --- Carte --- */
         .map-container {
             flex: 1;
             position: relative;
             margin: 15px;
+            margin-top: 5px; /* Réduit car le header est là */
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
@@ -151,80 +235,20 @@
             height: 100%;
         }
 
-        .controls {
-            position: absolute;
-            /* MODIFICATION ICI : Remonté à 25% */
-            bottom: 25%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 25px;
-            border-radius: 30px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            display: flex;
-            gap: 15px;
-            z-index: 1000;
-            flex-wrap: wrap;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .control-btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-            min-width: 120px;
-        }
-
-        .control-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .control-btn:active {
-            transform: translateY(0);
-        }
-
-        .control-btn.my-location {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-        }
-
-        .leaflet-popup-content-wrapper {
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-            min-width: 250px;
-        }
-
+        /* --- Popups et Navigation --- */
         .popup-content h3 {
             color: #667eea;
             margin-bottom: 8px;
             font-size: 16px;
         }
 
-        .popup-content p {
-            color: #666;
-            font-size: 13px;
-            margin: 5px 0;
-        }
-
-        .popup-content .status {
-            display: inline-block;
+        .popup-content .status.available {
+            background: #d1fae5;
+            color: #065f46;
             padding: 4px 12px;
             border-radius: 15px;
             font-size: 12px;
             font-weight: 600;
-            margin-top: 8px;
-        }
-
-        .popup-content .status.available {
-            background: #d1fae5;
-            color: #065f46;
         }
 
         .navigation-btn {
@@ -240,25 +264,14 @@
             transition: all 0.3s ease;
         }
 
-        .navigation-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
-        }
-
         .position-pulse {
             animation: positionPulse 2s infinite;
         }
 
         @keyframes positionPulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 15px rgba(59, 130, 246, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-            }
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
 
         .navigation-panel {
@@ -281,35 +294,10 @@
             margin-bottom: 10px;
         }
 
-        .navigation-header h3 {
-            color: #667eea;
-            font-size: 16px;
-        }
-
-        .navigation-info {
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
         .navigation-stats {
             display: flex;
             justify-content: space-between;
             margin-bottom: 10px;
-        }
-
-        .stat {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #666;
         }
 
         .stop-navigation {
@@ -321,71 +309,6 @@
             border-radius: 10px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 16px;
-        }
-
-        .stop-navigation:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
-        }
-
-        /* Style pour mobile */
-        @media (max-width: 768px) {
-            header {
-                padding: 10px 15px;
-            }
-            .logo h1 {
-                font-size: 20px;
-            }
-            .stats {
-                gap: 8px;
-            }
-            .stat-item {
-                padding: 6px 12px;
-            }
-            .stat-text {
-                font-size: 12px;
-            }
-            .controls {
-                padding: 12px 20px;
-                gap: 10px;
-                /* MODIFICATION MOBILE AUSSI : 25% */
-                bottom: 25%;
-            }
-            .control-btn {
-                padding: 8px 15px;
-                font-size: 12px;
-                min-width: 100px;
-            }
-            .map-container {
-                margin: 10px;
-                border-radius: 10px;
-            }
-            .navigation-panel {
-                top: 10px;
-                right: 10px;
-                left: 10px;
-                max-width: none;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .logo h1 {
-                font-size: 18px;
-            }
-            .stat-item {
-                padding: 4px 10px;
-            }
-            .controls {
-                flex-direction: column;
-                width: 90%;
-                padding: 10px;
-            }
-            .control-btn {
-                width: 100%;
-                min-width: auto;
-            }
         }
 
         .loading {
@@ -401,56 +324,57 @@
             text-align: center;
         }
 
-        .leaflet-control-locate {
-            background: white;
-            border-radius: 4px;
-            padding: 5px;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.4);
-        }
-
-        .leaflet-control-locate a {
-            background-color: #fff;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23333'%3E%3Cpath d='M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0 0 13 3.06V1h-2v2.06A8.994 8.994 0 0 0 3.06 11H1v2h2.06A8.994 8.994 0 0 0 11 20.94V23h2v-2.06A8.994 8.994 0 0 0 20.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z'/%3E%3C/svg%3E");
-            background-size: 16px 16px;
-            background-position: center;
-            background-repeat: no-repeat;
-            width: 30px;
-            height: 30px;
-            display: block;
-            border-radius: 4px;
-        }
-
-        .leaflet-control-locate a:hover {
-            background-color: #f4f4f4;
+        /* Style pour mobile */
+        @media (max-width: 600px) {
+            .logo h1 { font-size: 18px; }
+            .stat-text { display: none; } /* Masquer texte stats sur mobile pour gain de place */
+            .stats { gap: 5px; }
+            .map-container { margin: 10px; }
+            .menu-dropdown { width: 180px; right: 10px; }
         }
     </style>
 </head>
 <body>
     <header>
-        <div class="logo">
-            <div class="logo-icon">🅿️</div>
-            <h1>ParkVision</h1>
+        <div class="header-left">
+            <div class="logo">
+                <div class="logo-icon">🅿️</div>
+                <h1>ParkVision</h1>
+            </div>
         </div>
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-dot available"></div>
-                <span class="stat-text"><span id="available-count">0</span> Disponibles</span>
+        
+        <div class="header-right">
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-dot available"></div>
+                    <span class="stat-text"><span id="available-count">0</span> Libres</span>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-dot my-position"></div>
+                    <span class="stat-text">Moi</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <div class="stat-dot my-position"></div>
-                <span class="stat-text">Ma position</span>
-            </div>
+            <button class="burger-btn" onclick="toggleMenu()">
+                ☰
+            </button>
         </div>
     </header>
 
+    <div class="menu-dropdown" id="menuDropdown">
+        <button class="menu-btn primary" onclick="fullRefreshAndClose()">
+            🔄 Actualiser
+        </button>
+        <button class="menu-btn" onclick="findNearestAndClose()">
+            📍 Place la plus proche
+        </button>
+        <button class="menu-btn location" onclick="locateMeAndClose()">
+            🎯 Ma position
+        </button>
+    </div>
+
     <div class="map-container">
         <div id="map"></div>
-        <div class="controls">
-            <button class="control-btn" onclick="fullRefresh()">🔄 Actualiser</button>
-            <button class="control-btn" onclick="findNearestParking()">📍 Plus proche</button>
-            <button class="control-btn my-location" onclick="locateMe()">🎯 Ma position</button>
         </div>
-    </div>
 
     <div class="navigation-panel" id="navigationPanel">
         <div class="navigation-header">
@@ -488,10 +412,8 @@
         let routingControl = null;
         let currentNavigationSpot = null;
 
-        // Coordonnées de Liège, Belgique
         const cityCenter = [50.6292, 5.5797];
 
-        // Attendre que Leaflet soit chargé
         function initMap() {
             if (typeof L === 'undefined') {
                 setTimeout(initMap, 100);
@@ -505,71 +427,96 @@
                 maxZoom: 19
             }).addTo(map);
 
-            // Ajouter un contrôle de localisation personnalisé
+            // Petit bouton de localisation sur la carte aussi (pratique)
             const locateControl = L.Control.extend({
-                options: {
-                    position: 'topleft'
-                },
+                options: { position: 'topleft' },
                 onAdd: function(map) {
                     const container = L.DomUtil.create('div', 'leaflet-control-locate');
-                    const link = L.DomUtil.create('a', '', container);
-                    link.href = '#';
-                    link.title = 'Localiser ma position';
-                    link.innerHTML = '📍';
+                    container.style.backgroundColor = 'white';
+                    container.style.padding = '5px';
+                    container.style.borderRadius = '4px';
+                    container.style.boxShadow = '0 1px 5px rgba(0,0,0,0.4)';
+                    container.style.cursor = 'pointer';
                     
-                    L.DomEvent.on(link, 'click', function(e) {
+                    const link = L.DomUtil.create('a', '', container);
+                    link.innerHTML = '📍';
+                    link.style.fontSize = '18px';
+                    link.title = 'Localiser';
+                    
+                    L.DomEvent.on(container, 'click', function(e) {
                         L.DomEvent.stopPropagation(e);
-                        L.DomEvent.preventDefault(e);
                         locateMe();
                     });
-                    
                     return container;
                 }
             });
-            
             map.addControl(new locateControl());
 
             generateParkingSpots();
             displayParkingSpots();
-            
-            // Démarrer la mise à jour aléatoire automatique
             scheduleNextUpdate();
         }
 
-        // --- NOUVELLE LOGIQUE DE MISE A JOUR AUTOMATIQUE ---
+        // --- GESTION DU MENU ---
+        function toggleMenu() {
+            const menu = document.getElementById('menuDropdown');
+            if (menu.classList.contains('show')) {
+                menu.classList.remove('show');
+            } else {
+                menu.classList.add('show');
+            }
+        }
+
+        // Fermer le menu si on clique ailleurs sur la carte
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('menuDropdown');
+            const burger = document.querySelector('.burger-btn');
+            
+            if (!menu.contains(event.target) && !burger.contains(event.target) && menu.classList.contains('show')) {
+                menu.classList.remove('show');
+            }
+        });
+
+        // Wrappers pour fermer le menu après action
+        function fullRefreshAndClose() {
+            fullRefresh();
+            toggleMenu();
+        }
+        function findNearestAndClose() {
+            findNearestParking();
+            toggleMenu();
+        }
+        function locateMeAndClose() {
+            locateMe();
+            toggleMenu();
+        }
+
+        // --- LOGIQUE METIER ---
 
         function scheduleNextUpdate() {
-            // Calculer un temps aléatoire entre 30 secondes (30000ms) et 1 minute (60000ms)
             const delay = Math.floor(Math.random() * (60000 - 30000 + 1) + 30000);
-            
             setTimeout(() => {
                 updateRandomSpot();
-                scheduleNextUpdate(); // Relancer le cycle
+                scheduleNextUpdate();
             }, delay);
         }
 
         function updateRandomSpot() {
-            // 1. Faire disparaître une place (Devient occupée)
             const availableSpots = parkingSpots.filter(s => s.available);
             if (availableSpots.length > 0) {
-                const randomFreeIndex = Math.floor(Math.random() * availableSpots.length);
-                availableSpots[randomFreeIndex].available = false;
-                availableSpots[randomFreeIndex].lastUpdate = new Date();
+                const idx = Math.floor(Math.random() * availableSpots.length);
+                availableSpots[idx].available = false;
+                availableSpots[idx].lastUpdate = new Date();
             }
 
-            // 2. Faire apparaître une place (Devient libre)
             const occupiedSpots = parkingSpots.filter(s => !s.available);
             if (occupiedSpots.length > 0) {
-                const randomOccupiedIndex = Math.floor(Math.random() * occupiedSpots.length);
-                occupiedSpots[randomOccupiedIndex].available = true;
-                occupiedSpots[randomOccupiedIndex].lastUpdate = new Date();
+                const idx = Math.floor(Math.random() * occupiedSpots.length);
+                occupiedSpots[idx].available = true;
+                occupiedSpots[idx].lastUpdate = new Date();
             }
-
-            // Mettre à jour l'affichage
             displayParkingSpots();
         }
-
-        // --- FIN NOUVELLE LOGIQUE ---
 
         function generateParkingSpots() {
             const spots = [
@@ -623,83 +570,43 @@
             }));
         }
 
-        // Icône pour les places disponibles
         const greenIcon = L.divIcon({
             className: 'custom-marker',
-            html: `<div style="
-                width: 20px;
-                height: 20px;
-                background: #10b981;
-                border: 3px solid white;
-                border-radius: 50%;
-                box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-                cursor: pointer;
-            "></div>`,
+            html: `<div style="width: 20px; height: 20px; background: #10b981; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); cursor: pointer;"></div>`,
             iconSize: [20, 20],
             iconAnchor: [10, 10]
         });
 
-        // Icône utilisateur
         const userIcon = L.divIcon({
             className: 'position-pulse',
-            html: `<div style="
-                width: 25px;
-                height: 25px;
-                background: #3b82f6;
-                border: 3px solid white;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-size: 12px;
-                font-weight: bold;
-            ">📍</div>`,
+            html: `<div style="width: 25px; height: 25px; background: #3b82f6; border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold;">📍</div>`,
             iconSize: [25, 25],
             iconAnchor: [12, 12]
         });
 
         function displayParkingSpots() {
-            // Supprimer les anciens marqueurs
             markers.forEach(marker => map.removeLayer(marker));
             markers = [];
-
             let availableCount = 0;
 
             parkingSpots.forEach(spot => {
-                // Si la place n'est pas disponible, on ne l'affiche pas
-                if (!spot.available) {
-                    return;
-                }
+                if (!spot.available) return;
                 
-                const marker = L.marker([spot.lat, spot.lng], { 
-                    icon: greenIcon 
-                }).addTo(map);
-
+                const marker = L.marker([spot.lat, spot.lng], { icon: greenIcon }).addTo(map);
                 const popupContent = `
                     <div class="popup-content">
                         <h3>${spot.name}</h3>
                         <p>📊 Capacité: ${spot.capacity} places</p>
                         <p>🕐 Mis à jour: ${spot.lastUpdate.toLocaleTimeString('fr-FR')}</p>
                         <span class="status available">Disponible</span>
-                        <button class="navigation-btn" onclick="startNavigation(${spot.id})">
-                            🚗 Naviguer jusqu'ici
-                        </button>
+                        <button class="navigation-btn" onclick="startNavigation(${spot.id})">🚗 Naviguer</button>
                     </div>
                 `;
-
                 marker.bindPopup(popupContent);
-                
-                marker.on('click', function() {
-                    marker.openPopup();
-                });
-
+                marker.on('click', () => marker.openPopup());
                 markers.push(marker);
-                
-                // On compte uniquement les disponibles
                 availableCount++;
             });
-
             document.getElementById('available-count').textContent = availableCount;
         }
 
@@ -707,95 +614,64 @@
             const spot = parkingSpots.find(s => s.id === spotId);
             if (!spot) return;
 
-            // Arrêter toute navigation en cours
             stopNavigation();
-
             currentNavigationSpot = spot;
 
             if (!userMarker) {
-                alert("Veuillez d'abord activer votre localisation");
+                alert("Veuillez d'abord activer votre localisation via le menu");
                 return;
             }
 
             const userPos = userMarker.getLatLng();
-
-            // Activer le mode navigation
             document.body.classList.add('navigation-mode');
 
-            // Créer le contrôle de routage
             routingControl = L.Routing.control({
-                waypoints: [
-                    L.latLng(userPos.lat, userPos.lng),
-                    L.latLng(spot.lat, spot.lng)
-                ],
+                waypoints: [L.latLng(userPos.lat, userPos.lng), L.latLng(spot.lat, spot.lng)],
                 routeWhileDragging: false,
                 showAlternatives: false,
-                lineOptions: {
-                    styles: [{ color: '#10b981', weight: 8, opacity: 0.9 }]
-                },
-                createMarker: function() { return null; },
+                lineOptions: { styles: [{ color: '#10b981', weight: 8, opacity: 0.9 }] },
+                createMarker: () => null,
                 collapsible: false,
                 show: false
             }).addTo(map);
 
-            // Masquer les autres marqueurs pendant la navigation
             markers.forEach(marker => {
                 if (marker.getLatLng().lat !== spot.lat || marker.getLatLng().lng !== spot.lng) {
                     map.removeLayer(marker);
                 }
             });
 
-            // Mettre à jour le panneau de navigation
             document.getElementById('destinationName').textContent = spot.name;
             document.getElementById('navigationPanel').style.display = 'block';
 
-            // Écouter les événements de routage
             routingControl.on('routesfound', function(e) {
                 const routes = e.routes;
                 if (routes && routes.length > 0) {
                     const route = routes[0];
-                    document.getElementById('distance').textContent = 
-                        (route.summary.totalDistance / 1000).toFixed(1) + ' km';
-                    
-                    const durationMinutes = Math.round(route.summary.totalTime / 60);
-                    document.getElementById('duration').textContent = 
-                        durationMinutes + ' min';
+                    document.getElementById('distance').textContent = (route.summary.totalDistance / 1000).toFixed(1) + ' km';
+                    document.getElementById('duration').textContent = Math.round(route.summary.totalTime / 60) + ' min';
                 }
             });
 
-            // Recentrer la carte
-            const bounds = L.latLngBounds([
-                [userPos.lat, userPos.lng],
-                [spot.lat, spot.lng]
-            ]);
-            map.fitBounds(bounds, { padding: [50, 50] });
+            map.fitBounds(L.latLngBounds([userPos, [spot.lat, spot.lng]]), { padding: [50, 50] });
         }
 
         function stopNavigation() {
-            // Désactiver le mode navigation
             document.body.classList.remove('navigation-mode');
-
             if (routingControl) {
                 map.removeControl(routingControl);
                 routingControl = null;
             }
-            
             currentNavigationSpot = null;
             document.getElementById('navigationPanel').style.display = 'none';
-
-            // Réafficher tous les marqueurs
             displayParkingSpots();
-
-            // Recentrer sur la position de l'utilisateur
             if (userMarker) {
-                const userPos = userMarker.getLatLng();
-                map.setView([userPos.lat, userPos.lng], 15);
+                map.setView(userMarker.getLatLng(), 15);
             } else {
                 map.setView(cityCenter, 14);
             }
         }
 
-        // Fonction manuelle pour le bouton Actualiser (met tout à jour aléatoirement)
         function fullRefresh() {
             parkingSpots.forEach(spot => {
                 spot.available = Math.random() > 0.4;
@@ -807,11 +683,10 @@
         function findNearestParking() {
             const availableSpots = parkingSpots.filter(spot => spot.available);
             if (availableSpots.length === 0) {
-                alert('Aucune place disponible pour le moment');
+                alert('Aucune place disponible');
                 return;
             }
 
-            // Si l'utilisateur a partagé sa position
             if (userMarker) {
                 const userPos = userMarker.getLatLng();
                 let nearestSpot = availableSpots[0];
@@ -824,50 +699,27 @@
                         nearestSpot = spot;
                     }
                 });
-
-                map.setView([nearestSpot.lat, nearestSpot.lng], 17, {
-                    animate: true,
-                    duration: 1
-                });
-
-                setTimeout(() => {
-                    const marker = markers.find(m => {
-                        const pos = m.getLatLng();
-                        return pos.lat === nearestSpot.lat && pos.lng === nearestSpot.lng;
-                    });
-                    if (marker) {
-                        marker.openPopup();
-                    }
-                }, 1000);
+                zoomToSpot(nearestSpot);
             } else {
-                // Sinon, choisir une place aléatoire
                 const nearest = availableSpots[Math.floor(Math.random() * availableSpots.length)];
-                map.setView([nearest.lat, nearest.lng], 17, {
-                    animate: true,
-                    duration: 1
-                });
-
-                setTimeout(() => {
-                    const marker = markers.find(m => {
-                        const pos = m.getLatLng();
-                        return pos.lat === nearest.lat && pos.lng === nearest.lng;
-                    });
-                    if (marker) {
-                        marker.openPopup();
-                    }
-                }, 1000);
+                zoomToSpot(nearest);
             }
+        }
+
+        function zoomToSpot(spot) {
+            map.setView([spot.lat, spot.lng], 17, { animate: true, duration: 1 });
+            setTimeout(() => {
+                const marker = markers.find(m => m.getLatLng().lat === spot.lat && m.getLatLng().lng === spot.lng);
+                if (marker) marker.openPopup();
+            }, 1000);
         }
 
         function getDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
         function locateMe() {
@@ -875,79 +727,41 @@
             loading.style.display = 'block';
 
             if (!navigator.geolocation) {
-                alert("La géolocalisation n'est pas supportée par votre navigateur");
+                alert("Géolocalisation non supportée");
                 loading.style.display = 'none';
                 return;
             }
 
-            if (watchId) {
-                navigator.geolocation.clearWatch(watchId);
-            }
+            if (watchId) navigator.geolocation.clearWatch(watchId);
 
             watchId = navigator.geolocation.watchPosition(
                 function(position) {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
                     
-                    if (userMarker) {
-                        map.removeLayer(userMarker);
-                    }
-                    if (userCircle) {
-                        map.removeLayer(userCircle);
-                    }
+                    if (userMarker) map.removeLayer(userMarker);
+                    if (userCircle) map.removeLayer(userCircle);
 
                     userMarker = L.marker([lat, lng], { icon: userIcon }).addTo(map);
-                    
-                    userCircle = L.circle([lat, lng], {
-                        color: '#3b82f6',
-                        fillColor: '#3b82f6',
-                        fillOpacity: 0.1,
-                        radius: position.coords.accuracy
-                    }).addTo(map);
+                    userCircle = L.circle([lat, lng], { color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, radius: position.coords.accuracy }).addTo(map);
 
                     if (routingControl && currentNavigationSpot) {
-                        routingControl.setWaypoints([
-                            L.latLng(lat, lng),
-                            L.latLng(currentNavigationSpot.lat, currentNavigationSpot.lng)
-                        ]);
+                        routingControl.setWaypoints([L.latLng(lat, lng), L.latLng(currentNavigationSpot.lat, currentNavigationSpot.lng)]);
                     } else if (!document.body.classList.contains('navigation-mode')) {
                         map.setView([lat, lng], 16);
                     }
-                    
                     loading.style.display = 'none';
                 },
                 function(error) {
                     loading.style.display = 'none';
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            alert("Vous avez refusé l'accès à votre position");
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            alert("Information de localisation indisponible");
-                            break;
-                        case error.TIMEOUT:
-                            alert("La demande de localisation a expiré");
-                            break;
-                        default:
-                            alert("Une erreur inconnue s'est produite");
-                            break;
-                    }
+                    alert("Impossible de vous localiser");
                 },
-                {
-                    enableHighAccuracy: true,
-                    timeout: 100000,
-                    maximumAge: 0
-                }
+                { enableHighAccuracy: true, timeout: 100000, maximumAge: 0 }
             );
         }
 
         window.addEventListener('load', initMap);
-
-        window.addEventListener('resize', function() {
-            setTimeout(() => {
-                map.invalidateSize();
-            }, 100);
-        });
+        window.addEventListener('resize', function() { setTimeout(() => map.invalidateSize(), 100); });
     </script>
 </body>
 </html>
